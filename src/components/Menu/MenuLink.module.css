@@ -1,0 +1,12 @@
+.menu-link:is(:link, :visited) {
+  display: block;
+  padding: var(--gutter-1);
+  border: 2px solid transparent;
+  border-radius: 8px;
+  margin: var(--gutter-1) 0;
+  transition: all 0.2s;
+}
+.menu-link:is(:hover, :active) {
+  border-color: var(--color-primary-3);
+  background-color: var(--color-primary-0);
+}

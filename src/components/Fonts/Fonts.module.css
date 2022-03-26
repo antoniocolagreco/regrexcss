@@ -1,0 +1,45 @@
+.typography-table {
+  margin: 1rem auto;
+  border-spacing: 5px;
+}
+
+.typography-table td {
+  padding: 1px 5px;
+}
+
+.typography-table th {
+  text-align: center;
+}
+
+.typography-table input {
+  text-align: right;
+}
+
+.typography-table td {
+  text-align: left;
+}
+
+.size-row,
+.size-row input {
+  background-color: #edf2ff;
+}
+
+.spacing-row,
+.spacing-row input {
+  background-color: #dbe4ff;
+}
+
+.height-row,
+.height-row input {
+  background-color: #bac8ff;
+}
+
+.name {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.small-label {
+  font-size: 12px;
+  text-transform: uppercase;
+}

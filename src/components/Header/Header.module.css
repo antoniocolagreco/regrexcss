@@ -1,0 +1,15 @@
+.header {
+  text-align: left;
+  margin-bottom: var(--gutter-2);
+}
+
+.header-link {
+  display: inline-block;
+  padding: var(--gutter-1);
+  border-radius: 8px;
+}
+
+.title {
+  font-size: var(--font-size-l);
+  font-weight: 600;
+}

@@ -1,0 +1,78 @@
+:root {
+  --font-size-xxxl: 4rem;
+  --font-size-xxl: 3rem;
+  --font-size-xl: 2rem;
+  --font-size-l: 1.5rem;
+  --font-size-m: 1rem;
+  --font-size-s: 0.8rem;
+
+  --gutter-0: 0.25rem;
+  --gutter-1: 0.5rem;
+  --gutter-2: 1rem;
+  --gutter-3: 2rem;
+  --gutter-4: 4rem;
+  --gutter-5: 6rem;
+  --gutter-6: 8rem;
+  --gutter-7: 12rem;
+  --gutter-8: 16rem;
+  --gutter-9: 20rem;
+
+  --color-white: #fff;
+  --color-black: #000;
+
+  --color-neutral-0: #f8f9fa;
+  --color-neutral-1: #f1f3f5;
+  --color-neutral-2: #e9ecef;
+  --color-neutral-3: #dee2e6;
+  --color-neutral-4: #ced4da;
+  --color-neutral-5: #adb5bd;
+  --color-neutral-6: #868e96;
+  --color-neutral-7: #495057;
+  --color-neutral-8: #343a40;
+  --color-neutral-9: #212529;
+
+  --color-primary-0: #e3fafc;
+  --color-primary-1: #c5f6fa;
+  --color-primary-2: #99e9f2;
+  --color-primary-3: #66d9e8;
+  --color-primary-4: #3bc9db;
+  --color-primary-5: #22b8cf;
+  --color-primary-6: #15aabf;
+  --color-primary-7: #1098ad;
+  --color-primary-8: #0c8599;
+  --color-primary-9: #0b7285;
+
+  --color-outline: hsla(188, 72%, 47%, 0.5);
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+
+* {
+  box-sizing: border-box;
+  font-weight: inherit;
+  font-family: inherit;
+  font-style: inherit;
+  color: inherit;
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+html {
+  font-size: 1rem;
+  font-family: 'Roboto', sans-serif;
+  color: var(--color-neutral-8);
+  background-color: var(--color-white);
+}
+
+a {
+  text-decoration: none;
+}
+
+*:focus-visible {
+  outline-color: var(--color-primary-3);
+  border-color: var(--color-primary-3);
+  outline-style: solid;
+  outline-width: 2px;
+}
+    

@@ -1,0 +1,13 @@
+.app {
+  display: flex;
+  padding: var(--gutter-3);
+}
+
+.menu-container {
+  flex-grow: 0;
+  flex-shrink: 0;
+  border-right: 1px solid var(--color-neutral-4);
+  margin-right: var(--gutter-3);
+  padding-right: var(--gutter-3);
+}
+

@@ -1,0 +1,20 @@
+.menu li {
+  list-style: none;
+}
+
+.link-content {
+  display: flex;
+  align-items: center;
+  justify-content: left;
+}
+
+.link-icon {
+  height: 24px;
+  width: 24px;
+  fill: currentColor;
+  margin-right: var(--gutter-1);
+}
+
+.link-text {
+  font-weight: 500;
+}

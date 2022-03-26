@@ -1,0 +1,62 @@
+.preview-container {
+  position: relative;
+}
+
+.preview {
+  opacity: 0;
+  transition: all 0.2s;
+}
+
+.preview * {
+  line-height: 1.75;
+}
+
+.visible {
+  opacity: 1;
+  transition: all 0.5s;
+}
+
+.preview :is(h1, h2, h3, h4, h5, h6) {
+  margin-bottom: 1.5rem;
+  margin-top: 3rem;
+  font-weight: bold;
+}
+
+.preview :is(p, small) {
+  margin-bottom: 1rem;
+}
+
+.preview *:first-child {
+  margin-top: 1.5rem;
+}
+
+.preview h1 {
+  font-size: 2em;
+}
+.preview h2 {
+  font-size: 1.5em;
+}
+
+.preview h3 {
+  font-size: 1.125em;
+}
+
+.preview h4 {
+  font-size: 1em;
+}
+
+.preview h5 {
+  font-size: 0.8125em;
+}
+
+.preview h6 {
+  font-size: 0.625em;
+}
+
+.preview p {
+  font-size: 1em;
+}
+
+.preview small {
+  font-size: 0.833em;
+}

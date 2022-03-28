@@ -6,7 +6,7 @@ import React, {
   KeyboardEvent,
   MouseEvent,
   ReactNode,
-  useEffect,
+  useCallback,
   useLayoutEffect,
   useRef,
   useState
@@ -19,7 +19,8 @@ interface SelectorProps {
   value: any | undefined;
   optionRender?: ((value: any) => ReactNode) | undefined;
   optionLabel?: ((value: any) => string) | undefined;
-  onSelect?: ((value: any) => void) | undefined;
+  onOptionSelect?: ((value: any) => void) | undefined;
+  onInputSelect?: ((value: string) => void) | undefined;
   onChange?: ((value: any) => void) | undefined;
   filterDeelay?: number | undefined;
 }
@@ -30,7 +31,8 @@ const Selector: FC<Omit<HTMLAttributes<HTMLDivElement>, 'onSelect' | 'onChange'>
     value,
     optionRender = (value: ReactNode) => value,
     optionLabel = (value: string) => value,
-    onSelect,
+    onOptionSelect,
+    onInputSelect,
     onChange,
     filterDeelay = 500,
     className,
@@ -38,42 +40,25 @@ const Selector: FC<Omit<HTMLAttributes<HTMLDivElement>, 'onSelect' | 'onChange'>
     ...otherProps
   } = props;
   const [filteredOptions, setFilteredOptions] = useState(options);
-  const [selectedOption, setSelectedOption] = useState<any | undefined>(value);
   const listElementRef = useRef<HTMLUListElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputElementRef = useRef<HTMLInputElement>(null);
-  let currentItemIndex: number | undefined = undefined;
-  let filterTimeout: NodeJS.Timeout;
-
-  useEffect(() => {
-    console.log(currentItemIndex);
-  }, [currentItemIndex]);
-
-  useLayoutEffect(() => {
-    if (selectedOption) {
-      const index = filteredOptions.indexOf(selectedOption);
-      setCurrentItemIndex(index);
-      scrollIntoView(index, { block: 'center' });
-    }
-  }, [selectedOption, filteredOptions]);
-
-  useLayoutEffect(() => {
-    if (!inputElementRef.current || !value) return;
-    inputElementRef.current.value = optionLabel(value);
-    return () => clearTimeout(filterTimeout);
-  }, [value]);
+  let filterTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  let currentIndexRef = useRef<number | undefined>(undefined);
 
   const onOptionClickHandler = (event: MouseEvent<HTMLLIElement>) => {
-    setCurrentItemIndex(event.currentTarget.value);
-    selectOption();
+    if (currentIndexRef.current !== undefined && onOptionSelect) {
+      onOptionSelect(filteredOptions[currentIndexRef.current]);
+    }
     hideDropDown();
+    setFilteredOptions(options);
   };
 
   const onOptionOverHandler = (event: MouseEvent<HTMLLIElement>) => {
     if (isDropDownHidden()) return;
-    removeHighlight(currentItemIndex);
-    setCurrentItemIndex(event.currentTarget.value);
-    addHighlight(currentItemIndex);
+    removeHighlight();
+    setCurrentIndex(event.currentTarget.value);
+    addHighlight();
   };
 
   const onOptionBlurHandler = (event: FocusEvent<HTMLInputElement>) => {
@@ -82,44 +67,72 @@ const Selector: FC<Omit<HTMLAttributes<HTMLDivElement>, 'onSelect' | 'onChange'>
   };
 
   const onInputChangeHandler = (event: ChangeEvent<HTMLInputElement>) => {
-    removeHighlight(currentItemIndex);
-    setCurrentItemIndex(undefined);
-    filterList(event.currentTarget.value);
+    removeHighlight();
+    setCurrentIndex(undefined);
+    filterOptions(event.currentTarget.value);
+    showDropDown();
   };
 
   const onInputKeyDownHandler = (event: KeyboardEvent<HTMLInputElement>) => {
     switch (event.key) {
       case 'ArrowDown':
         event.preventDefault();
-        showDropDown();
-        removeHighlight(currentItemIndex);
-        if (currentItemIndex === undefined || currentItemIndex === filteredOptions.length - 1) {
-          setCurrentItemIndex(0);
-        } else {
-          setCurrentItemIndex(currentItemIndex + 1);
+        if (currentIndexRef === undefined) {
+          setCurrentIndex(filteredOptions.indexOf(value));
         }
-        addHighlight(currentItemIndex);
-        scrollIntoView(currentItemIndex);
+        showDropDown();
+        removeHighlight();
+        if (currentIndexRef.current === undefined || currentIndexRef.current === filteredOptions.length - 1) {
+          setCurrentIndex(0);
+        } else {
+          setCurrentIndex(currentIndexRef.current + 1);
+        }
+        addHighlight();
+        scrollToCurrent();
         break;
       case 'ArrowUp':
         event.preventDefault();
-        showDropDown();
-        removeHighlight(currentItemIndex);
-        if (currentItemIndex === undefined || currentItemIndex === 0) {
-          setCurrentItemIndex(filteredOptions.length - 1);
-        } else {
-          setCurrentItemIndex(currentItemIndex - 1);
+        if (currentIndexRef === undefined) {
+          setCurrentIndex(filteredOptions.indexOf(value));
         }
-        addHighlight(currentItemIndex);
-        scrollIntoView(currentItemIndex);
+        showDropDown();
+        removeHighlight();
+        if (currentIndexRef.current === undefined || currentIndexRef.current === 0) {
+          setCurrentIndex(filteredOptions.length - 1);
+        } else {
+          setCurrentIndex(currentIndexRef.current - 1);
+        }
+        addHighlight();
+        scrollToCurrent();
         break;
       case 'Escape':
         restoreInputText();
         hideDropDown();
         break;
       case 'Enter':
-        selectOption();
+        if (
+          currentIndexRef.current !== undefined &&
+          onOptionSelect &&
+          filteredOptions[currentIndexRef.current] !== value
+        ) {
+          onOptionSelect(filteredOptions[currentIndexRef.current]);
+        } else {
+          let newOption: any | undefined = undefined;
+          if (inputElementRef.current && onOptionSelect) {
+            for (let option of options) {
+              if (optionLabel(option) !== inputElementRef.current.value.toLowerCase()) continue;
+              newOption = option;
+              break;
+            }
+          }
+          if (newOption && onOptionSelect) {
+            onOptionSelect(newOption);
+          } else if (inputElementRef.current && onInputSelect) {
+            onInputSelect(inputElementRef.current.value);
+          }
+        }
         hideDropDown();
+        setFilteredOptions(options);
         break;
     }
   };
@@ -162,70 +175,83 @@ const Selector: FC<Omit<HTMLAttributes<HTMLDivElement>, 'onSelect' | 'onChange'>
     dropdown.classList.remove(css.hidden);
   };
 
-  const updateInputText = (value: string) => {
-    if (!inputElementRef.current) return;
-    inputElementRef.current.value = value;
+  const setCurrentIndex = (value: number | undefined) => {
+    currentIndexRef.current = value;
   };
 
-  const selectOption = () => {
-    if (currentItemIndex === undefined) {
-      setSelectedOption(undefined);
-      if (onSelect) onSelect(inputElementRef.current?.value);
-    } else {
-      removeHighlight(currentItemIndex);
-      const currentOption = filteredOptions[currentItemIndex];
-      updateInputText(optionLabel(currentOption));
-      setSelectedOption(currentOption);
-      if (onSelect) onSelect(optionLabel(currentOption));
-    }
-  };
-
-  const setCurrentItemIndex = (value: number | undefined) => {
-    currentItemIndex = value;
-  };
-
-  const filterList = (filterString: string) => {
-    filterTimeout = setTimeout(() => {
-      const list = [];
-      for (let option of options) {
-        if (optionLabel(option).toLowerCase().indexOf(filterString.toLowerCase()) > -1) {
-          list.push(option);
+  const filterOptions = useCallback(
+    async (filterString: string) => {
+      if (filterTimeoutRef.current) clearTimeout(filterTimeoutRef.current);
+      filterTimeoutRef.current = setTimeout(() => {
+        const list = [];
+        for (let option of options) {
+          if (optionLabel(option).toLowerCase().indexOf(filterString.toLowerCase()) > -1) {
+            list.push(option);
+          }
         }
-      }
-      if (list.length > 0) {
-        setFilteredOptions(list);
-      } else {
-        setFilteredOptions(options);
-      }
-      showDropDown();
-    }, filterDeelay);
-  };
+        if (list.length > 0) {
+          setFilteredOptions(list);
+        } else {
+          setFilteredOptions(options);
+        }
+      }, filterDeelay);
+    },
+    [filterTimeoutRef, options, filterDeelay, optionLabel]
+  );
 
   const restoreInputText = () => {
-    if (!selectedOption || !inputElementRef.current) return;
-    inputElementRef.current.value = optionLabel(selectedOption);
+    if (!inputElementRef.current) return;
+    inputElementRef.current.value = optionLabel(value);
   };
 
-  const removeHighlight = (index: number | undefined) => {
-    if (index === undefined) return;
-    const currentElement = getListElementByIndex(index);
+  const removeHighlight = () => {
+    if (currentIndexRef.current === undefined) return;
+    const currentElement = getListElementByIndex(currentIndexRef.current);
     if (currentElement) currentElement.classList.remove(css.current);
   };
 
-  const addHighlight = (index: number | undefined) => {
-    if (index === undefined) return;
-    const currentElement = getListElementByIndex(index);
+  const addHighlight = () => {
+    if (currentIndexRef.current === undefined) return;
+    const currentElement = getListElementByIndex(currentIndexRef.current);
     if (currentElement) currentElement.classList.add(css.current);
   };
 
-  const scrollIntoView = (
-    index: number | undefined,
-    scrollIntoViewOptions: ScrollIntoViewOptions = { block: 'nearest' }
-  ) => {
-    if (index === undefined) return;
-    const currentElement = getListElementByIndex(index);
-    if (currentElement) currentElement.scrollIntoView(scrollIntoViewOptions);
+  const scrollToCurrent = () => {
+    if (currentIndexRef.current === undefined) return;
+    const currentElement = getListElementByIndex(currentIndexRef.current);
+    if (currentElement) currentElement.scrollIntoView({ block: 'nearest' });
   };
+
+  const scrollToSelected = useCallback(() => {
+    const selectedOptionIndex = filteredOptions.indexOf(value);
+    if (selectedOptionIndex >= 0) {
+      const currentElement = getListElementByIndex(selectedOptionIndex);
+      if (currentElement) currentElement.scrollIntoView({ block: 'center' });
+      setCurrentIndex(selectedOptionIndex);
+      return;
+    }
+    const currentElement = getListElementByIndex(0);
+    if (currentElement) currentElement.scrollIntoView({ block: 'nearest' });
+  }, [filteredOptions, value]);
+
+  /** Setta il campo input al cambio di value*/
+  useLayoutEffect(() => {
+    if (!inputElementRef.current || !value) return;
+    inputElementRef.current.value = optionLabel(value);
+  }, [value, optionLabel]);
+
+  /** Aggiorna lista al cambio delle options */
+  useLayoutEffect(() => {
+    setFilteredOptions(options);
+    return () => {
+      if (!filterTimeoutRef.current) return;
+      clearTimeout(filterTimeoutRef.current);
+    };
+  }, [options]);
+
+  useLayoutEffect(() => {
+    scrollToSelected();
+  }, [filteredOptions, scrollToSelected]);
 
   return (
     <div className={classes(css.selector, className)} {...otherProps}>
@@ -243,7 +269,7 @@ const Selector: FC<Omit<HTMLAttributes<HTMLDivElement>, 'onSelect' | 'onChange'>
         <div className={css['drop-down-scroll']}>
           <ul className={css.list} ref={listElementRef}>
             {filteredOptions.map((listOption, index) => {
-              const selected = listOption === selectedOption;
+              const selected = listOption === value;
               return (
                 <li
                   className={classes(css.option, selected ? css.selected : undefined)}
@@ -251,7 +277,6 @@ const Selector: FC<Omit<HTMLAttributes<HTMLDivElement>, 'onSelect' | 'onChange'>
                   value={index}
                   onClick={onOptionClickHandler}
                   onMouseOver={onOptionOverHandler}
-                  aria-selected={selected}
                 >
                   {optionRender(listOption)}
                 </li>
